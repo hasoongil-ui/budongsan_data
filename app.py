@@ -8,14 +8,36 @@ import urllib3
 import urllib.parse
 import os
 import altair as alt
+import streamlit.components.v1 as components  # 번역 팝업 차단용 특수 부품 추가
 
 # 💡 회사 PC SSL 인증서 차단 경고음 무시
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 🎨 웹앱 기본 설정 및 번역 오지랖 원천 차단
+# 🎨 웹앱 기본 설정
 st.set_page_config(page_title="Pro Estate Analytics", layout="wide", page_icon="🏢")
-st.markdown('<html lang="ko"></html>', unsafe_allow_html=True)
-st.write('<meta name="google" content="notranslate">', unsafe_allow_html=True)
+
+# 🛑 [핵심 패치] 번역 팝업 강제 차단 (자바스크립트 DOM 직접 제어)
+components.html(
+    """
+    <script>
+        // 스트림릿의 한계를 넘어 실제 브라우저(부모 창)의 최상단 요소를 강제 조작합니다.
+        const parentDoc = window.parent.document;
+        
+        // 1. 문서 전체의 언어를 한국어(ko)로 강제 변경 (오지랖 차단 1단계)
+        parentDoc.documentElement.lang = 'ko';
+        
+        // 2. 구글 번역 금지 메타 태그를 브라우저 머리(Head)에 직접 이식 (오지랖 차단 2단계)
+        let meta = parentDoc.querySelector('meta[name="google"]');
+        if (!meta) {
+            meta = parentDoc.createElement('meta');
+            meta.name = 'google';
+            meta.content = 'notranslate';
+            parentDoc.head.appendChild(meta);
+        }
+    </script>
+    """,
+    height=0, width=0  # 화면에 보이지 않게 스텔스 처리
+)
 
 # ==========================================
 # 🔑 [보안 핵심] 하이브리드 스텔스 API 키 엔진
@@ -299,7 +321,7 @@ if execute_btn:
                     display_df.to_excel(writer, sheet_name='종합 실거래가', index=False)
                     workbook, worksheet = writer.book, writer.sheets['종합 실거래가']
                     
-                    # 🎨 [복구 완료] 엑셀 헤더 디자인 (파란 바탕 + 흰 글씨)
+                    # 🎨 엑셀 헤더 디자인 (파란 바탕 + 흰 글씨) - 절대로 건드리지 않았습니다!
                     header_format = workbook.add_format({
                         'bg_color': '#2980B9', 
                         'font_color': '#FFFFFF', 
@@ -313,7 +335,6 @@ if execute_btn:
                     float_fmt = workbook.add_format({'num_format': '#,##0.00'}) 
                     
                     for i, col in enumerate(display_df.columns):
-                        # 🎨 [복구 완료] 헤더 셀에 파란색 디자인 덮어쓰기
                         worksheet.write(0, i, col, header_format)
                         
                         if col in ["거래금액(만원)", "평당 거래가(만원)"]: worksheet.set_column(i, i, 15, num_fmt)
