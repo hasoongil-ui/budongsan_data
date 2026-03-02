@@ -8,35 +8,39 @@ import urllib3
 import urllib.parse
 import os
 import altair as alt
-import streamlit.components.v1 as components  # 번역 팝업 차단용 특수 부품 추가
+import streamlit.components.v1 as components  # 🛑 번역 팝업 차단용 특수 부품 추가
 
 # 💡 회사 PC SSL 인증서 차단 경고음 무시
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 🎨 웹앱 기본 설정
-st.set_page_config(page_title="Pro Estate Analytics", layout="wide", page_icon="🏢")
+# 🎨 웹앱 기본 설정 (크롬 감시망을 피하기 위해 탭 제목을 완전한 한국어로 변경)
+st.set_page_config(page_title="부동산 실거래가 정밀 분석기", layout="wide", page_icon="🏢")
 
-# 🛑 [핵심 패치] 번역 팝업 강제 차단 (자바스크립트 DOM 직접 제어)
+# 🛑 [핵심 패치] 번역 팝업 강제 차단 (자바스크립트 DOM 직접 타격)
 components.html(
     """
     <script>
-        // 스트림릿의 한계를 넘어 실제 브라우저(부모 창)의 최상단 요소를 강제 조작합니다.
-        const parentDoc = window.parent.document;
-        
-        // 1. 문서 전체의 언어를 한국어(ko)로 강제 변경 (오지랖 차단 1단계)
-        parentDoc.documentElement.lang = 'ko';
-        
-        // 2. 구글 번역 금지 메타 태그를 브라우저 머리(Head)에 직접 이식 (오지랖 차단 2단계)
-        let meta = parentDoc.querySelector('meta[name="google"]');
-        if (!meta) {
-            meta = parentDoc.createElement('meta');
-            meta.name = 'google';
-            meta.content = 'notranslate';
-            parentDoc.head.appendChild(meta);
+    // 현재 창부터 부모 창(Streamlit 메인 앱)까지 거슬러 올라가며 번역 강제 차단 (CORS 에러 무시)
+    let currentWindow = window;
+    while (true) {
+        try {
+            currentWindow.document.documentElement.lang = 'ko';
+            currentWindow.document.documentElement.setAttribute('translate', 'no');
+            if (!currentWindow.document.querySelector('meta[name="google"]')) {
+                let meta = currentWindow.document.createElement('meta');
+                meta.name = 'google';
+                meta.content = 'notranslate';
+                currentWindow.document.head.appendChild(meta);
+            }
+            if (currentWindow === window.top) break;
+            currentWindow = currentWindow.parent;
+        } catch (e) {
+            break; // 크로스 도메인 보안에 막히면 조용히 중단
         }
+    }
     </script>
     """,
-    height=0, width=0  # 화면에 보이지 않게 스텔스 처리
+    height=0, width=0
 )
 
 # ==========================================
@@ -132,11 +136,11 @@ def get_multi_xml_text(node, tags, default=""):
             return elem.text.strip()
     return default
 
-# 🌟 메인 화면 대시보드
+# 🌟 메인 화면 대시보드 (영어 텍스트에 번역 금지 망토 적용)
 st.markdown("""
 <div class="header-box">
-    <h2>🏢 Pro Estate Analytics <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v6.3 Zero-Exposure Security</span></h2>
-    <p>상실의시대 대표님 전용 | 엿보기(Shoulder Surfing) 원천 차단 및 시각 보안 최적화 에디션</p>
+    <h2>🏢 <span class="notranslate" translate="no">Pro Estate Analytics</span> <span class="notranslate" translate="no" style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v6.3 Zero-Exposure Security</span></h2>
+    <p>상실의시대 대표님 전용 | 엿보기(<span class="notranslate" translate="no">Shoulder Surfing</span>) 원천 차단 및 시각 보안 최적화 에디션</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -165,7 +169,8 @@ with st.sidebar:
         if final_api_key: st.info("💡 로컬 오프라인 모드로 통신 중입니다.")
             
     st.divider()
-    st.caption("ⓒ 2026 Developed by Mina")
+    # 사이드바 하단 영어 문구에도 번역 금지 망토 적용
+    st.markdown("<p class='notranslate' translate='no' style='font-size: 13px; color: #888888;'>ⓒ 2026 Developed by Mina</p>", unsafe_allow_html=True)
 
 # 🎯 1. 검색 조건 설정
 st.markdown("<div class='category-title'>🔍 1. 검색 조건 설정 (원클릭)</div>", unsafe_allow_html=True)
@@ -209,137 +214,4 @@ if execute_btn:
     elif not selected_dongs: st.warning("⚠️ 분석할 동을 선택해주세요!")
     else:
         api_targets = []
-        if opt_apt_trade: api_targets.append(("아파트 매매", "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev"))
-        if opt_off_trade: api_targets.append(("오피스텔 매매", "https://apis.data.go.kr/1613000/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade"))
-        if opt_vil_trade: api_targets.append(("연립/다세대 매매", "https://apis.data.go.kr/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade"))
-        if opt_house_trade: api_targets.append(("단독/다가구 매매", "https://apis.data.go.kr/1613000/RTMSDataSvcSHTrade/getRTMSDataSvcSHTrade"))
-        if opt_apt_rent: api_targets.append(("아파트 전월세", "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent"))
-        if opt_off_rent: api_targets.append(("오피스텔 전월세", "https://apis.data.go.kr/1613000/RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent"))
-        if opt_vil_rent: api_targets.append(("연립/다세대 전월세", "https://apis.data.go.kr/1613000/RTMSDataSvcRHRent/getRTMSDataSvcRHRent"))
-        if opt_house_rent: api_targets.append(("단독/다가구 전월세", "https://apis.data.go.kr/1613000/RTMSDataSvcSHRent/getRTMSDataSvcSHRent"))
-        if opt_apt_bun: api_targets.append(("분양권/전매", "https://apis.data.go.kr/1613000/RTMSDataSvcSilvTrade/getRTMSDataSvcSilvTrade"))
-        if opt_biz_trade: api_targets.append(("상업/업무용", "https://apis.data.go.kr/1613000/RTMSDataSvcBizTrade/getRTMSDataSvcBizTrade"))
-        if opt_land_trade: api_targets.append(("토지 매매", "https://apis.data.go.kr/1613000/RTMSDataSvcLandTrade/getRTMSDataSvcLandTrade"))
-
-        if not api_targets: st.error("🚨 수집할 데이터를 체크해 주세요!")
-        else:
-            all_data = []
-            lawd_cd = SEOUL_GU_CD[selected_gu]
-            safe_api_key = urllib.parse.unquote(final_api_key)
-            progress_text = st.empty()
-            
-            for idx, (prop_type, url) in enumerate(api_targets):
-                progress_text.markdown(f"📡 **[{prop_type}]** 수집 중... ({idx+1}/{len(api_targets)})")
-                try:
-                    res = requests.get(url, params={"serviceKey": safe_api_key, "LAWD_CD": lawd_cd, "DEAL_YMD": target_month, "numOfRows": "2000"}, timeout=20, verify=False)
-                    if res.status_code == 200:
-                        root = ET.fromstring(res.content)
-                        items = root.findall('.//item')
-                        for item in items:
-                            item_dong = get_multi_xml_text(item, ['umdNm', 'dongNm', 'sggNm'], "")
-                            if "전체 (해당 구 모든 동)" in selected_dongs or any(d in item_dong for d in selected_dongs):
-                                apt_name = get_multi_xml_text(item, ['aptNm', 'offiNm', 'mhouseNm', 'bldgNm', 'rletTypeNm'], "건물명 없음")
-                                raw_p = get_multi_xml_text(item, ['dealAmount'], "0").replace(",", "")
-                                dep_p = get_multi_xml_text(item, ['deposit'], "0").replace(",", "")
-                                mon_p = get_multi_xml_text(item, ['monthlyRent'], "0").replace(",", "")
-                                area = float(get_multi_xml_text(item, ['excluUseAr', 'plottage', 'spc'], "0.0"))
-                                py = round(area / 3.3058, 2) # 소수점 2자리 반올림 적용
-                                
-                                if int(raw_p) > 0:
-                                    num_p = int(raw_p) * 10000; p_man = int(raw_p)
-                                    disp_p = format_currency(num_p)
-                                else:
-                                    num_p = int(dep_p) * 10000; p_man = int(dep_p)
-                                    disp_p = f"보증금 {format_currency(num_p)} / 월세 {int(mon_p)*10000:,}원"
-                                
-                                p_per_py = int(num_p / py) if py > 0 else 0
-                                all_data.append({
-                                    "계약일": f"{get_multi_xml_text(item, ['dealYear'])}-{int(get_multi_xml_text(item, ['dealMonth'])):02d}-{int(get_multi_xml_text(item, ['dealDay'])):02d}", 
-                                    "분류": prop_type, "법정동": item_dong, "부동산/건물명": apt_name, "층수": f"{get_multi_xml_text(item, ['floor'])}층",
-                                    "면적(㎡)": round(area, 2), "평수(평)": py, "거래금액": disp_p, "거래금액(만원)": p_man,
-                                    "평당 거래가": format_currency(p_per_py) if int(raw_p) > 0 else "-",
-                                    "평당 거래가(만원)": p_per_py // 10000 if int(raw_p) > 0 else 0,
-                                    "취소 여부": "취소됨" if get_multi_xml_text(item, ['cdealDay']) else "정상",
-                                    "_raw_price": num_p, "_raw_pyeong_price": p_per_py
-                                })
-                except: pass
-            progress_text.empty()
-
-            if all_data:
-                df = pd.DataFrame(all_data)
-                valid_df = df[df['취소 여부'] == '정상']
-                if not valid_df.empty:
-                    st.markdown("<div class='category-title'>📊 3. 전체 수집 데이터 요약 브리핑</div>", unsafe_allow_html=True)
-                    trade_df = valid_df[valid_df['평당 거래가(만원)'] > 0]
-                    avg_p = int(trade_df['_raw_pyeong_price'].mean()) if not trade_df.empty else 0
-                    max_row = trade_df.loc[trade_df['_raw_price'].idxmax()] if not trade_df.empty else None
-                    
-                    c_m1, c_m2, c_m3 = st.columns(3)
-                    c_m1.metric("📌 총 정상 거래 건수", f"{len(valid_df)} 건")
-                    c_m2.metric("💸 매매 평균 평당가", f"{format_currency(avg_p)}")
-                    c_m3.metric(f"🏆 매매 최고가", format_currency(max_row['_raw_price']) if max_row is not None else "-")
-
-                    if not trade_df.empty:
-                        st.markdown("<div class='category-title'>📈 4. 매매가 기준 단지별 정밀 시각화</div>", unsafe_allow_html=True)
-                        ch_col1, ch_col2 = st.columns(2)
-                        with ch_col1:
-                            st.markdown("**🏆 1) 지역 내 매매 최고가 순위 20위 (가로형)**")
-                            top20 = trade_df.copy()
-                            top20['단지_평수'] = top20['부동산/건물명'] + " (" + top20['평수(평)'].astype(str) + "평)"
-                            top20 = top20.sort_values(by='_raw_price', ascending=False).drop_duplicates(subset=['단지_평수']).nlargest(20, '_raw_price')
-                            top20['거래금액(억)'] = top20['_raw_price'] / 100000000
-                            
-                            # 가로형 차트 적용
-                            bar = alt.Chart(top20).mark_bar(color="#E74C3C", cornerRadiusTopRight=4, cornerRadiusBottomRight=4).encode(
-                                x=alt.X('거래금액(억):Q', title='거래금액 (억)'),
-                                y=alt.Y('단지_평수:N', sort='-x', title=None),
-                                tooltip=['단지_평수', '거래금액(억)']
-                            ).properties(height=500)
-                            st.altair_chart(bar, use_container_width=True)
-                        with ch_col2:
-                            st.markdown("**📐 2) 면적(평) vs 거래금액 상관관계**")
-                            sc_df = trade_df.copy(); sc_df['거래금액(억)'] = sc_df['_raw_price'] / 100000000
-                            sc = alt.Chart(sc_df).mark_circle(size=60, color="#3498DB").encode(
-                                x=alt.X('평수(평):Q', title='면적 (평)'), y=alt.Y('거래금액(억):Q', title='거래금액 (억)'),
-                                tooltip=['부동산/건물명', '평수(평)', '거래금액(억)']
-                            ).properties(height=500)
-                            st.altair_chart(sc, use_container_width=True)
-                
-                st.markdown("<div class='category-title'>📋 5. 전체 상세 데이터 확인 및 엑셀 다운로드</div>", unsafe_allow_html=True)
-                # 가공용 DF 생성
-                display_df = df.drop(columns=['_raw_price', '_raw_pyeong_price']).copy()
-                display_df = display_df.sort_values(by=["분류", "계약일"], ascending=[True, False]).reset_index(drop=True)
-                
-                # 화면 출력 (소수점 2자리 포맷 적용)
-                st.dataframe(display_df.style.format({
-                    "거래금액(만원)": "{:,}", "평당 거래가(만원)": "{:,}", 
-                    "면적(㎡)": "{:.2f}", "평수(평)": "{:.2f}"
-                }), use_container_width=True)
-
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    display_df.to_excel(writer, sheet_name='종합 실거래가', index=False)
-                    workbook, worksheet = writer.book, writer.sheets['종합 실거래가']
-                    
-                    # 🎨 엑셀 헤더 디자인 (파란 바탕 + 흰 글씨) - 절대로 건드리지 않았습니다!
-                    header_format = workbook.add_format({
-                        'bg_color': '#2980B9', 
-                        'font_color': '#FFFFFF', 
-                        'bold': True, 
-                        'border': 1, 
-                        'align': 'center', 
-                        'valign': 'vcenter'
-                    })
-                    
-                    num_fmt = workbook.add_format({'num_format': '#,##0'}) 
-                    float_fmt = workbook.add_format({'num_format': '#,##0.00'}) 
-                    
-                    for i, col in enumerate(display_df.columns):
-                        worksheet.write(0, i, col, header_format)
-                        
-                        if col in ["거래금액(만원)", "평당 거래가(만원)"]: worksheet.set_column(i, i, 15, num_fmt)
-                        elif col in ["면적(㎡)", "평수(평)"]: worksheet.set_column(i, i, 12, float_fmt)
-                        else: worksheet.set_column(i, i, 15)
-                
-                st.download_button("📥 깔끔하게 디자인된 엑셀(Excel) 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
-            else: st.warning("데이터가 존재하지 않습니다.")
+        if opt_apt_trade: api_targets.append(("아파트 매매", "
