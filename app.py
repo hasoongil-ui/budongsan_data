@@ -378,15 +378,14 @@ if execute_btn:
                             
                             bar_chart = alt.Chart(top20_df).mark_bar(
                                 color="#E74C3C", 
-                                size=40, 
-                                cornerRadiusTopLeft=4, 
-                                cornerRadiusTopRight=4
+                                cornerRadiusTopRight=4,   # 모서리 둥글기를 오른쪽으로 변경
+                                cornerRadiusBottomRight=4 # 모서리 둥글기를 오른쪽으로 변경
                             ).encode(
-                                x=alt.X('단지_평수:N', sort=alt.EncodingSortField(field='거래금액(억)', order='descending'), title=None, axis=alt.Axis(labelAngle=-45, labelLimit=250)),
-                                y=alt.Y('거래금액(억):Q', title='거래금액 (억)', scale=alt.Scale(domainMin=0)),
+                                x=alt.X('거래금액(억):Q', title='거래금액 (억)', scale=alt.Scale(domainMin=0)),
+                                y=alt.Y('단지_평수:N', sort=alt.EncodingSortField(field='거래금액(억)', order='descending'), title=None, axis=alt.Axis(labelAngle=0, labelLimit=250)),
                                 tooltip=['분류', '단지_평수', '거래금액(억)']
                             ).properties(
-                                height=450
+                                height=500 # 모바일에서 20개가 겹치지 않게 높이를 살짝 늘렸습니다
                             )
                             st.altair_chart(bar_chart, use_container_width=True)
                             
@@ -429,4 +428,5 @@ if execute_btn:
                 safe_filename = f"{selected_gu}_{'_'.join(selected_dongs)}_{target_month}_종합데이터.xlsx"
                 st.download_button("📥 깔끔하게 디자인된 엑셀(Excel) 다운로드", data=output.getvalue(), file_name=safe_filename, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", type="primary")
             else:
+
                 st.warning("선택하신 조건에 해당하는 데이터가 단 1건도 존재하지 않습니다.")
