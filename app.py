@@ -1,14 +1,3 @@
-import streamlit as st
-import requests
-import pandas as pd
-from datetime import datetime
-import io
-import xml.etree.ElementTree as ET
-import urllib3
-import urllib.parse
-import os
-import altair as alt
-
 # 💡 회사 PC SSL 인증서 차단 경고음 무시
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -23,12 +12,10 @@ import xml.etree.ElementTree as ET
 import os
 import altair as alt
 
-# 페이지 설정 및 번역 팝업 강제 차단
+# [보안/언어 설정] 번역 팝업 및 중복 실행 완벽 차단
 st.set_page_config(page_title="Pro Estate Analytics", layout="wide", page_icon="🏢")
 st.markdown('<html lang="ko"></html>', unsafe_allow_html=True)
-# ==========================================
-# 🔑 [보안 핵심] 하이브리드 스텔스 API 키 엔진
-# ==========================================
+st.write('<meta name="google" content="notranslate">', unsafe_allow_html=True) # 번역 팝업 강제 차단
 KEY_FILE = "api_key.txt"
 
 def get_api_key():
@@ -624,17 +611,19 @@ with col2:
 with col3:
     selected_month_label = st.selectbox("📅 조회 연월 (최신순)", month_labels)
     target_month = month_values[selected_month_label]
-
-st.write("") 
-
 # ==========================================
-# 🗂️ 2. 수집할 데이터 선택
+# 🔘 1. 검색 조건 설정
 # ==========================================
-st.markdown("<div class='category-title'>🗂️ 2. 수집할 데이터 선택</div>", unsafe_allow_html=True)
-st.caption("※ 주의: 체크하신 항목은 공공데이터포털(data.go.kr)에서 개별적으로 각각 [활용 신청]이 완료되어 있어야 정상 수집됩니다.")
+st.markdown("<div class='category-title'>🔍 1. 검색 조건 설정 (원클릭)</div>", unsafe_allow_html=True)
+coll, col2, col3 = st.columns([1, 2, 1])
 
-col_a, col_b, col_c = st.columns(3)
-with col_a:
+with coll:
+    selected_gu = st.selectbox("📍 자치구 선택", list(SEOUL_GU_CD.keys()), key="final_gu_selector")
+
+with col2:
+    base_dongs = SEOUL_DONG_DB.get(selected_gu, [])
+    available_dongs = ["전체 (해당 구 모든 동)"] + base_dongs
+    selected_dongs = st.multiselect("🏘️ 법정동 다중 선택", available_dongs, default=["전체 (해당 구 모든 동)"], key="final_dong_selector")
     st.markdown("**[주거용 매매]**")
     opt_apt_trade = st.checkbox("🏢 아파트 매매 실거래가", value=True)
     opt_off_trade = st.checkbox("🏢 오피스텔 매매 실거래가")
@@ -888,6 +877,7 @@ if execute_btn:
             else:
 
                 st.warning("선택하신 조건에 해당하는 데이터가 단 1건도 존재하지 않습니다.")
+
 
 
 
