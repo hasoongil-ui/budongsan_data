@@ -136,7 +136,7 @@ def get_multi_xml_text(node, tags, default=""):
 st.markdown("""
 <div class="header-box">
     <h2>🏢 Pro Estate Analytics <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v6.3 Zero-Exposure Security</span></h2>
-    <p>상실의시대 가족 전용 | Shoulder Surfing)원천 차단 및 시각 보안 최적화 에디션</p>
+    <p>상실의시대 대표님 전용 | 엿보기(Shoulder Surfing) 원천 차단 및 시각 보안 최적화 에디션</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -149,7 +149,7 @@ with st.sidebar:
         st.success("**서버 온라인**\n\n부동산 빅데이터 관제 시스템이 정상 가동 중입니다.")
         final_api_key = saved_key
     else:
-        st.title("⚙️ API Key 설정")
+        st.title("⚙️ 관리자 설정")
         if saved_key:
             st.success("🔒 **로컬 보안 모드 작동 중**")
             api_key_input = st.text_input("마스터 API 키 변경 (선택)", value="", type="password", key="api_change_sidebar")
@@ -162,7 +162,7 @@ with st.sidebar:
             st.success("✅ 인증키가 저장되었습니다!")
             saved_key = api_key_input
         final_api_key = saved_key
-        if final_api_key: st.info("💡 삼중 보안 모드가 작동중입니다.")
+        if final_api_key: st.info("💡 로컬 오프라인 모드로 통신 중입니다.")
             
     st.divider()
     st.caption("ⓒ 2026 Developed by Mina")
@@ -343,4 +343,3 @@ if execute_btn:
                 
                 st.download_button("📥 깔끔하게 디자인된 엑셀(Excel) 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
             else: st.warning("데이터가 존재하지 않습니다.")
-
