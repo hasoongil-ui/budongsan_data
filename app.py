@@ -404,11 +404,22 @@ if execute_btn:
                             )
                             st.altair_chart(scatter_chart, use_container_width=True)
                 
-                st.markdown("<div class='category-title'>📋 5. 전체 상세 데이터 확인 및 엑셀 다운로드</div>", unsafe_allow_html=True)
-                display_df = df.drop(columns=['_raw_price', '_raw_pyeong_price'])
+                st.markdown("<div class='category-title'>📄 5. 전체 상세 데이터 확인 및 엑셀 다운로드</div>", unsafe_allow_html=True)
+                
+                # 가독성을 위해 면적과 평수 소수점 2자리로 제한
+                display_df = df.drop(columns=['_raw_price', '_raw_pyeong_price']).copy()
+                display_df['면적(㎡)'] = display_df['면적(㎡)'].round(2)
+                display_df['평수(평)'] = display_df['평수(평)'].round(2)
+                
                 display_df = display_df.sort_values(by=["분류", "계약일"], ascending=[True, False]).reset_index(drop=True)
                 
-                st.dataframe(display_df.style.format({"거래금액(만원)": "{:,}", "평당 거래가(만원)": "{:,}"}), use_container_width=True)
+                # 화면 출력 시 소수점 2자리까지 고정해서 보여주기
+                st.dataframe(display_df.style.format({
+                    "거래금액(만원)": "{:,}", 
+                    "평당 거래가(만원)": "{:,}",
+                    "면적(㎡)": "{:.2f}",
+                    "평수(평)": "{:.2f}"
+                }), use_container_width=True)
 
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -417,11 +428,14 @@ if execute_btn:
                     
                     header_format = workbook.add_format({'bg_color': '#2980B9', 'font_color': '#FFFFFF', 'bold': True, 'border': 1, 'align': 'center', 'valign': 'vcenter'})
                     number_format = workbook.add_format({'num_format': '#,##0'}) 
+                    float_format = workbook.add_format({'num_format': '#,##0.00'}) # 엑셀용 소수점 2자리 포맷
                     
                     for col_num, value in enumerate(display_df.columns.values):
                         worksheet.write(0, col_num, value, header_format)
                         if value in ["거래금액(만원)", "평당 거래가(만원)"]:
                             worksheet.set_column(col_num, col_num, 15, number_format)
+                        elif value in ["면적(㎡)", "평수(평)"]:
+                            worksheet.set_column(col_num, col_num, 12, float_format) # 면적/평수 전용 포맷 적용
                         else:
                             worksheet.set_column(col_num, col_num, 15)
 
@@ -430,5 +444,6 @@ if execute_btn:
             else:
 
                 st.warning("선택하신 조건에 해당하는 데이터가 단 1건도 존재하지 않습니다.")
+
 
 
