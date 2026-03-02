@@ -298,13 +298,27 @@ if execute_btn:
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                     display_df.to_excel(writer, sheet_name='종합 실거래가', index=False)
                     workbook, worksheet = writer.book, writer.sheets['종합 실거래가']
+                    
+                    # 🎨 [복구 완료] 엑셀 헤더 디자인 (파란 바탕 + 흰 글씨)
+                    header_format = workbook.add_format({
+                        'bg_color': '#2980B9', 
+                        'font_color': '#FFFFFF', 
+                        'bold': True, 
+                        'border': 1, 
+                        'align': 'center', 
+                        'valign': 'vcenter'
+                    })
+                    
                     num_fmt = workbook.add_format({'num_format': '#,##0'}) 
                     float_fmt = workbook.add_format({'num_format': '#,##0.00'}) 
                     
                     for i, col in enumerate(display_df.columns):
+                        # 🎨 [복구 완료] 헤더 셀에 파란색 디자인 덮어쓰기
+                        worksheet.write(0, i, col, header_format)
+                        
                         if col in ["거래금액(만원)", "평당 거래가(만원)"]: worksheet.set_column(i, i, 15, num_fmt)
                         elif col in ["면적(㎡)", "평수(평)"]: worksheet.set_column(i, i, 12, float_fmt)
                         else: worksheet.set_column(i, i, 15)
                 
-                st.download_button("📥 엑셀(Excel) 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
+                st.download_button("📥 깔끔하게 디자인된 엑셀(Excel) 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
             else: st.warning("데이터가 존재하지 않습니다.")
