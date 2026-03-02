@@ -15,19 +15,51 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # 🎨 웹앱 기본 설정
 st.set_page_config(page_title="Pro Estate Analytics", layout="wide", page_icon="🏢")
 
-# 🚫 구글 기본 언어 설정 변경 및 번역 팝업 방지
+# 🚫 구글 번역 팝업 완전 차단 (MutationObserver 지속 감지)
 import streamlit.components.v1 as components
 components.html(
     """
     <script>
-        window.parent.document.documentElement.lang = 'ko';
-        window.parent.document.documentElement.setAttribute('translate', 'no');
-        if (!window.parent.document.querySelector('meta[name=google]')) {
-            const meta = window.parent.document.createElement('meta');
-            meta.name = 'google';
-            meta.content = 'notranslate';
-            window.parent.document.head.appendChild(meta);
+    (function() {
+        function applyNoTranslate(doc) {
+            try {
+                var html = doc.documentElement;
+                html.lang = 'ko';
+                html.setAttribute('translate', 'no');
+                html.classList.add('notranslate');
+
+                // meta google notranslate
+                if (!doc.querySelector('meta[name="google"][content="notranslate"]')) {
+                    var m = doc.createElement('meta');
+                    m.name = 'google';
+                    m.content = 'notranslate';
+                    doc.head.appendChild(m);
+                }
+
+                // meta notranslate for other crawlers
+                if (!doc.querySelector('meta[http-equiv="Content-Language"]')) {
+                    var m2 = doc.createElement('meta');
+                    m2.setAttribute('http-equiv', 'Content-Language');
+                    m2.content = 'ko';
+                    doc.head.appendChild(m2);
+                }
+            } catch(e) {}
         }
+
+        // 부모 문서 (iframe 1단계 위)
+        applyNoTranslate(window.parent.document);
+
+        // 최상위 문서 (same-origin 인 경우)
+        try { applyNoTranslate(window.top.document); } catch(e) {}
+
+        // Streamlit이 re-render할 때도 유지되도록 MutationObserver 등록
+        var target = window.parent.document.documentElement;
+        var observer = new MutationObserver(function() {
+            if (target.lang !== 'ko') { target.lang = 'ko'; }
+            if (!target.getAttribute('translate')) { target.setAttribute('translate', 'no'); }
+        });
+        observer.observe(target, { attributes: true });
+    })();
     </script>
     """,
     height=0, width=0,
