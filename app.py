@@ -126,7 +126,7 @@ def get_multi_xml_text(node, tags, default=""):
 st.markdown("""
 <div class="header-box">
     <h2>🏢 Pro Estate Analytics <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v6.3 Zero-Exposure Security</span></h2>
-    <p>상실의시대 대표님 전용 | 엿보기(Shoulder Surfing) 원천 차단 및 시각 보안 최적화 에디션</p>
+    <p>상실의시대 가족 전용 | 엿보기(Shoulder Surfing) 원천 차단 및 시각 보안 최적화 에디션</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -145,7 +145,7 @@ with st.sidebar:
         
         # 💡 [핵심 패치] 블라인드 텍스트 입력창 로직!
         if saved_key:
-            st.success("🔒 **로컬 보안 모드 작동 중**\n\nAPI 키가 PC에 안전하게 보관되어 있습니다. (눈 아이콘을 눌러도 보이지 않습니다)")
+            st.success("🔒 **로컬 보안 모드 작동 중**\n\nAPI 키가 PC에 안전하게 보관되어 있습니다. (3중 보안서버가 강력하게 적용중입니다)")
             # value를 빈칸("")으로 주어서 화면상엔 완벽한 빈칸으로 보임
             api_key_input = st.text_input("마스터 API 키 변경 (선택)", value="", type="password", placeholder="새로운 키로 바꿀 때만 여기에 붙여넣으세요")
         else:
@@ -430,3 +430,4 @@ if execute_btn:
             else:
 
                 st.warning("선택하신 조건에 해당하는 데이터가 단 1건도 존재하지 않습니다.")
+
