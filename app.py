@@ -141,7 +141,7 @@ with st.sidebar:
         st.success("**서버 온라인**\n\n부동산 빅데이터 관제 시스템이 정상적으로 가동 중입니다.")
         final_api_key = saved_key
     else:
-        st.title("⚙️ 관리자 설정")
+        st.title("⚙️ API Key 설정")
         
         # 💡 [핵심 패치] 블라인드 텍스트 입력창 로직!
         if saved_key:
@@ -430,4 +430,5 @@ if execute_btn:
             else:
 
                 st.warning("선택하신 조건에 해당하는 데이터가 단 1건도 존재하지 않습니다.")
+
 
