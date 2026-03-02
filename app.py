@@ -10,6 +10,7 @@ import os
 import altair as alt
 
 # 💡 회사 PC SSL 인증서 차단 경고음 무시
+import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # 🎨 웹앱 기본 설정
@@ -19,17 +20,12 @@ import pandas as pd
 from datetime import datetime
 import io
 import xml.etree.ElementTree as ET
-import urllib3
-import urllib.parse
 import os
 import altair as alt
 
-# 💡 회사 PC SSL 인증서 차단 경고음 무시
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# 🎨 웹앱 기본 설정
+# 페이지 설정 및 번역 팝업 강제 차단
 st.set_page_config(page_title="Pro Estate Analytics", layout="wide", page_icon="🏢")
-
+st.markdown('<html lang="ko"></html>', unsafe_allow_html=True)
 # ==========================================
 # 🔑 [보안 핵심] 하이브리드 스텔스 API 키 엔진
 # ==========================================
@@ -595,10 +591,10 @@ with st.sidebar:
         if saved_key:
             st.success("🔒 **로컬 보안 모드 작동 중**\n\nAPI 키가 PC에 안전하게 보관되어 있습니다. (3중 보안서버가 강력하게 적용중입니다)")
             # value를 빈칸("")으로 주어서 화면상엔 완벽한 빈칸으로 보임
-            api_key_input = st.text_input("마스터 API 키 변경 (선택)", value="", type="password", placeholder="새로운 키로 바꿀 때만 여기에 붙여넣으세요")
+            api_key_input = st.text_input("마스터 API 키 변경 (선택)", value="", type="password", placeholder="새로운 키로 바꿀 때만 여기에 붙여넣으세요", key="api_key_change_input")
         else:
             st.warning("⚠️ 인증키가 없습니다.")
-            api_key_input = st.text_input("국토교통부 마스터 API 키 입력", value="", type="password", placeholder="여기에 키를 붙여넣으세요")
+            api_key_input = st.text_input("국토교통부 마스터 API 키 입력", value="", type="password", placeholder="여기에 키를 붙여넣으세요", key="api_key_first_input")
             
         # 사용자가 빈칸에 뭔가 새로운 것을 집어넣고 엔터를 쳤다면? 새로운 키로 교체 및 덮어쓰기!
         if api_key_input:
@@ -892,6 +888,7 @@ if execute_btn:
             else:
 
                 st.warning("선택하신 조건에 해당하는 데이터가 단 1건도 존재하지 않습니다.")
+
 
 
 
