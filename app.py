@@ -12,31 +12,8 @@ import altair as alt
 # 💡 회사 PC SSL 인증서 차단 경고음 무시
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 🎨 웹앱 기본 설정
-st.set_page_config(page_title="Pro Estate Analytics", layout="wide", page_icon="🏢")
-
-# 🛑 [핵심 패치] 번역 팝업 강제 차단 (자바스크립트 스텔스 모드)
-import streamlit.components.v1 as components
-components.html(
-    """
-    <script>
-        try {
-            const parent = window.parent.document;
-            parent.documentElement.lang = 'ko';
-            parent.documentElement.setAttribute('translate', 'no');
-            
-            let meta = parent.querySelector('meta[name="google"]');
-            if (!meta) {
-                meta = parent.createElement('meta');
-                meta.name = 'google';
-                meta.content = 'notranslate';
-                parent.head.appendChild(meta);
-            }
-        } catch(e) {}
-    </script>
-    """,
-    height=0, width=0
-)
+# 🎨 웹앱 기본 설정 (크롬이 영어로 오해하지 않도록 탭 제목 한글화)
+st.set_page_config(page_title="프로 부동산 실거래 분석기", layout="wide", page_icon="🏢")
 
 # ==========================================
 # 🔑 [보안 핵심] 하이브리드 스텔스 API 키 엔진
@@ -131,11 +108,11 @@ def get_multi_xml_text(node, tags, default=""):
             return elem.text.strip()
     return default
 
-# 🌟 메인 화면 대시보드
+# 🌟 메인 화면 대시보드 (영어 완전 제거)
 st.markdown("""
 <div class="header-box">
-    <h2>🏢 Pro Estate Analytics <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v6.3 Zero-Exposure Security</span></h2>
-    <p>상실의시대 가족 전용 | Shoulder Surfing 원천 차단 및 시각 보안 최적화 에디션</p>
+    <h2>🏢 프로 부동산 실거래 분석기 <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v6.3 무결점 보안 에디션</span></h2>
+    <p>상실의시대 가족 전용 | 화면 훔쳐보기 원천 차단 및 시각 보안 최적화 시스템</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -164,7 +141,7 @@ with st.sidebar:
         if final_api_key: st.info("💡 로컬 오프라인 모드로 통신 중입니다.")
             
     st.divider()
-    st.caption("ⓒ 2026 Developed by Mina")
+    st.caption("ⓒ 2026 시스템 개발: 미나")
 
 # 🎯 1. 검색 조건 설정
 st.markdown("<div class='category-title'>🔍 1. 검색 조건 설정 (원클릭)</div>", unsafe_allow_html=True)
