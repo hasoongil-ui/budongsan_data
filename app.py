@@ -114,7 +114,7 @@ def get_multi_xml_text(node, tags, default=""):
 st.markdown("""
 <div class="header-box">
     <h2>🏢 Pro Estate Analytics <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v6.3 Zero-Exposure Security</span></h2>
-    <p>상실의시대 가족 전용 | Shoulder Surfing 원천 차단 및 시각 보안 최적화 에디션</p>
+    <p>상실의 시대 가족 전용 | Shoulder Surfing 원천 차단 및 시각 보안 최적화 에디션</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -322,4 +322,5 @@ if execute_btn:
                 
                 st.download_button("📥 깔끔하게 디자인된 엑셀(Excel) 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
             else: st.warning("데이터가 존재하지 않습니다.")
+
 
