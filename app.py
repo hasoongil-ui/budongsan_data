@@ -15,6 +15,29 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # 🎨 웹앱 기본 설정
 st.set_page_config(page_title="Pro Estate Analytics", layout="wide", page_icon="🏢")
 
+# 🛑 [핵심 패치] 번역 팝업 강제 차단 (자바스크립트 스텔스 모드)
+import streamlit.components.v1 as components
+components.html(
+    """
+    <script>
+        try {
+            const parent = window.parent.document;
+            parent.documentElement.lang = 'ko';
+            parent.documentElement.setAttribute('translate', 'no');
+            
+            let meta = parent.querySelector('meta[name="google"]');
+            if (!meta) {
+                meta = parent.createElement('meta');
+                meta.name = 'google';
+                meta.content = 'notranslate';
+                parent.head.appendChild(meta);
+            }
+        } catch(e) {}
+    </script>
+    """,
+    height=0, width=0
+)
+
 # ==========================================
 # 🔑 [보안 핵심] 하이브리드 스텔스 API 키 엔진
 # ==========================================
