@@ -125,7 +125,7 @@ with st.sidebar:
         st.success("**서버 온라인**\n\n부동산 빅데이터 관제 시스템이 정상 가동 중입니다.")
         final_api_key = saved_key
     else:
-        st.title("⚙️ 관리자 설정")
+        st.title("⚙️ ApI Key 설정")
         if saved_key:
             st.success("🔒 **로컬 보안 모드 작동 중**")
             api_key_input = st.text_input("마스터 API 키 변경 (선택)", value="", type="password", key="api_change_sidebar")
@@ -329,3 +329,4 @@ if execute_btn:
                 
                 st.download_button("📥 깔끔하게 디자인된 엑셀 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
             else: st.warning("데이터가 존재하지 않습니다.")
+
