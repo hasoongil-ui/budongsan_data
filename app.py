@@ -77,6 +77,17 @@ SEOUL_DONG_DB = {
     "서대문구": ["충정로2가", "합동", "미근동", "냉천동", "천연동", "옥천동", "영천동", "현저동", "북아현동", "홍제동", "대현동", "대신동", "신촌동", "봉원동", "창천동", "연희동", "홍은동", "북가좌동", "남가좌동"]
 }
 
+# 💡 [V11 핵심 무기] VIP 초구축 아파트 스나이퍼 매핑 사전 (네이버/R114 데이터 수제작 하드코딩)
+# 형식: "법정동_아파트명": {전용면적: 네이버공급면적}
+VIP_APARTMENT_DB = {
+    "대치동_은마": {76.79: 101.52, 84.43: 115.0},  # 31평형, 34평형 정밀 타격
+    "여의도동_시범": {60.96: 62.79, 79.24: 79.24, 118.12: 118.12, 156.99: 156.99}, # 전용=공급
+    "여의도동_대교": {95.50: 100.19, 133.40: 142.14},
+    "여의도동_진주": {48.26: 49.71, 63.83: 65.74, 72.82: 76.03},
+    "압구정동_신현대9차": {111.38: 115.7, 152.22: 165.28, 183.41: 198.34},
+    "압구정동_미성1차": {105.65: 112.4, 153.36: 165.28},
+}
+
 def get_recent_months(n=6):
     months = []
     y, m = datetime.now().year, datetime.now().month
@@ -109,10 +120,20 @@ def get_multi_xml_text(node, tags, default=""):
     return default
 
 # ==========================================================
-# 🏗️ [V10 하이브리드 코어] K-apt + 건축물대장 + 구축 아파트 오기 자동 보정 System 적용
+# 🏗️ [V11 얼티밋 코어] VIP 스나이퍼 매핑 + K-apt + 건축물대장 + 다이내믹 방어막
 # ==========================================================
 @st.cache_data(show_spinner=False, ttl=86400)
-def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_area, prop_type, build_year):
+def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_area, prop_type, build_year, dong_name):
+    # 🌟 엔진 0: VIP 스나이퍼 매핑 (네이버 완벽 일치 하드코딩 타격)
+    if "아파트" in prop_type:
+        search_key = f"{dong_name}_{apt_name.replace('아파트', '').strip()}"
+        if search_key in VIP_APARTMENT_DB:
+            # 전용면적이 VIP 사전에 있으면 무조건 그 공급면적을 반환! (오차 0%)
+            # 소수점 오차 방지를 위해 차이가 1.0 이내면 같은 평형으로 간주
+            for db_exclu, db_supply in VIP_APARTMENT_DB[search_key].items():
+                if abs(db_exclu - exclu_area) < 1.0:
+                    return db_supply
+
     try: year = int(build_year)
     except: year = 2000
 
@@ -134,6 +155,7 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
     bjd_code = f"{lawd_cd}{umd_cd.zfill(5)}"
     safe_api_key = urllib.parse.unquote(api_key)
     
+    # 🌟 엔진 1: K-apt (공동주택 기본정보) API
     if "아파트" in prop_type:
         try:
             kapt_url = "http://apis.data.go.kr/1613000/AptBasisInfoService1/getAptList"
@@ -149,6 +171,7 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
                         return round(exclu_area * 1.33, 2)
         except: pass
 
+    # 🌟 엔진 2: 건축물대장 API
     try:
         jibun_parts = str(jibun).replace(" ", "").split('-')
         bun = jibun_parts[0].zfill(4)
@@ -176,18 +199,18 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
                 return round(exclu_area + common_area, 2)
     except: pass
 
+    # 🌟 엔진 3: 다이내믹 건축년도 방어
     return fallback_area
 
 # 🌟 메인 화면 대시보드
 st.markdown("""
 <div class="header-box">
-    <h2>🏢 실시간 부동산 실거래 분석기 <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v10.3 구축 건물 건축대장 오기 자동 수정 적용</span></h2>
-    <p>상실의시대 가족 전용 | 건축년도(Build Year) 다이내믹 역산 엔진 100% 가동 중</p>
+    <h2>🏢 실시간 부동산 실거래 분석기 <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v11.3 구축 건물 건축대장 오기 자동 수정 적용</span></h2>
+    <p>상실의시대 가족 전용 | 구축 아파트 데이터 오류 개선 및 건축년도(Build Year) 다이내믹 역산 엔진 적용</p>
 </div>
 """, unsafe_allow_html=True)
 
 with st.sidebar:
-    # 💡 [V10.3 모던화] 여자아이 이미지를 세련된 고층 빌딩 라인 아이콘으로 교체
     st.image("https://img.icons8.com/fluency/96/skyscrapers.png", width=60)
     saved_key, is_from_cloud = get_api_key()
     
@@ -212,7 +235,6 @@ with st.sidebar:
         if final_api_key: st.info("💡 로컬 오프라인 모드로 통신 중입니다.")
             
     st.divider()
-    # 💡 [V10.3 모던화] 저작권 문구를 "COPYLIGHT(C) 2026"으로 변경
     st.caption("COPYLIGHT(C) 2026")
 
 # 🎯 1. 검색 조건 설정
@@ -292,7 +314,7 @@ if execute_btn:
                 progress_text = st.empty()
                 
                 for idx, (prop_type, url) in enumerate(api_targets):
-                    progress_text.markdown(f"📡 **[{prop_type}]** 백그라운드 V10 하이브리드 엔진 가동 중... ({idx+1}/{len(api_targets)})")
+                    progress_text.markdown(f"📡 **[{prop_type}]** 백그라운드 V11 얼티밋 엔진 가동 중... ({idx+1}/{len(api_targets)})")
                     try:
                         res = requests.get(url, params={"serviceKey": urllib.parse.unquote(final_api_key), "LAWD_CD": lawd_cd, "DEAL_YMD": target_month, "numOfRows": "2000"}, timeout=20, verify=False)
                         if res.status_code == 200:
@@ -313,7 +335,8 @@ if execute_btn:
                                     area_exc = float(get_multi_xml_text(item, ['excluUseAr', 'plottage', 'spc'], "0.0"))
                                     py_exc = round(area_exc / 3.3058, 2) 
                                     
-                                    supply_area = get_ultimate_supply_area(final_api_key, lawd_cd, umd_cd, jibun, apt_name, area_exc, prop_type, build_year)
+                                    # 💡 [V11 코어] 동 이름(item_dong)을 매개변수로 추가 전달!
+                                    supply_area = get_ultimate_supply_area(final_api_key, lawd_cd, umd_cd, jibun, apt_name, area_exc, prop_type, build_year, item_dong)
                                     py_sup = round(supply_area / 3.3058, 2)
 
                                     if int(raw_p) > 0:
@@ -388,7 +411,7 @@ if execute_btn:
                             st.altair_chart(sc, use_container_width=True)
                 
                 st.markdown("<div class='category-title'>📋 5. 전체 상세 데이터 확인 및 엑셀 다운로드</div>", unsafe_allow_html=True)
-                st.caption("💡 [엔진 가동 현황] 최신 K-apt(공동주택), 건축물대장 API 및 건축년도(Build Year) 다이내믹 역산 엔진이 완벽하게 가동되어 100%에 가까운 공급면적을 자동 산출합니다.")
+                st.caption("💡 [엔진 가동 현황] 1970~80년대 VIP 초구축 아파트들은 네이버 매핑 테이블로 즉시 타격하며, 그 외 단지는 K-apt 및 건축물대장 API, 다이내믹 역산 엔진이 자동 산출합니다.")
                 
                 display_df = df.drop(columns=['_raw_price', '_raw_pyeong_price']).copy()
                 display_df = display_df.sort_values(by=["분류", "계약일"], ascending=[True, False]).reset_index(drop=True)
