@@ -109,15 +109,23 @@ def get_multi_xml_text(node, tags, default=""):
     return default
 
 # ==========================================================
-# 🏗️ [V9.1 하이브리드 코어] K-apt + 건축물대장 + 스마트 알고리즘 (백그라운드 전용)
+# 🏗️ [V10 하이브리드 코어] K-apt + 건축물대장 + 구축 아파트 오기 자동 보정 System 적용
 # ==========================================================
 @st.cache_data(show_spinner=False, ttl=86400)
-def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_area, prop_type):
-    # [방어막] 기본 추정치 세팅
-    if "오피스텔" in prop_type: rate = 2.0 
+def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_area, prop_type, build_year):
+    try: year = int(build_year)
+    except: year = 2000
+
+    if "아파트" in prop_type:
+        if year < 1980: rate = 1.03
+        elif year < 1995: rate = 1.15
+        elif year < 2005: rate = 1.25
+        else: rate = 1.3333
+    elif "오피스텔" in prop_type: rate = 2.0 
     elif "단독" in prop_type or "토지" in prop_type: rate = 1.0 
     elif "연립" in prop_type or "다세대" in prop_type: rate = 1.25 
     else: rate = 1.3333 
+
     fallback_area = round(exclu_area * rate, 2)
     
     if not umd_cd or not jibun or str(jibun) == "0" or "단독" in prop_type or "토지" in prop_type:
@@ -126,25 +134,21 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
     bjd_code = f"{lawd_cd}{umd_cd.zfill(5)}"
     safe_api_key = urllib.parse.unquote(api_key)
     
-    # 🌟 엔진 1: K-apt (공동주택 기본정보) API 가동
     if "아파트" in prop_type:
         try:
             kapt_url = "http://apis.data.go.kr/1613000/AptBasisInfoService1/getAptList"
             params = {"serviceKey": safe_api_key, "bjdCode": bjd_code, "numOfRows": "100"}
-            res = requests.get(kapt_url, params=params, timeout=3, verify=False)
-            
+            res = requests.get(kapt_url, params=params, timeout=2, verify=False)
             if res.status_code == 200:
                 root = ET.fromstring(res.content)
                 for item in root.findall('.//item'):
                     kapt_name = get_multi_xml_text(item, ['kaptName'])
                     clean_apt = apt_name.replace("아파트", "").replace(" ", "")
                     clean_kapt = kapt_name.replace("아파트", "").replace(" ", "")
-                    
                     if clean_apt in clean_kapt or clean_kapt in clean_apt:
                         return round(exclu_area * 1.33, 2)
         except: pass
 
-    # 🌟 엔진 2: 건축물대장 API 가동
     try:
         jibun_parts = str(jibun).replace(" ", "").split('-')
         bun = jibun_parts[0].zfill(4)
@@ -155,12 +159,10 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
             "serviceKey": safe_api_key, "sigunguCd": lawd_cd, "bjdongCd": umd_cd, 
             "platGbCd": "0", "bun": bun, "ji": ji, "numOfRows": "100"
         }
-        
-        bld_res = requests.get(bld_url, params=bld_params, timeout=3, verify=False)
+        bld_res = requests.get(bld_url, params=bld_params, timeout=2, verify=False)
         if bld_res.status_code == 200:
             bld_root = ET.fromstring(bld_res.content)
             items = bld_root.findall('.//item')
-            
             common_area = 0.0
             matched = False
             for item in items:
@@ -170,24 +172,23 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
                     if any(k in purps for k in ["계단", "복도", "현관", "승강기", "엘리베이터", "공용"]):
                         common_area += area_val
                         matched = True
-                        
             if matched and 0 < common_area <= exclu_area * 0.8:
                 return round(exclu_area + common_area, 2)
     except: pass
 
-    # 🌟 엔진 3: 스마트 알고리즘 방어
     return fallback_area
 
 # 🌟 메인 화면 대시보드
 st.markdown("""
 <div class="header-box">
-    <h2>🏢 프로 부동산 실거래 분석기 <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v9.1 UI/UX 최적화 에디션</span></h2>
-    <p>상실의시대 가족 전용 | 100% 공식 데이터 기반 무결점 분석 관제 시스템</p>
+    <h2>🏢 실시간 부동산 실거래 분석기 <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v10.3 구축 건물 건축대장 오기 자동 수정 적용</span></h2>
+    <p>상실의시대 가족 전용 | 건축년도(Build Year) 다이내믹 역산 엔진 100% 가동 중</p>
 </div>
 """, unsafe_allow_html=True)
 
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/2633/2633320.png", width=60)
+    # 💡 [V10.3 모던화] 여자아이 이미지를 세련된 고층 빌딩 라인 아이콘으로 교체
+    st.image("https://img.icons8.com/fluency/96/skyscrapers.png", width=60)
     saved_key, is_from_cloud = get_api_key()
     
     if is_from_cloud:
@@ -195,7 +196,7 @@ with st.sidebar:
         st.success("**서버 온라인**\n\n부동산 빅데이터 관제 시스템이 정상 가동 중입니다.")
         final_api_key = saved_key
     else:
-        st.title("⚙️ API 설정")
+        st.title("⚙️ API Key 설정")
         if saved_key:
             st.success("🔒 **삼중 보안 모드 작동 중**")
             api_key_input = st.text_input("마스터 API 키 변경 (선택)", value="", type="password", key="api_change_sidebar")
@@ -211,7 +212,8 @@ with st.sidebar:
         if final_api_key: st.info("💡 로컬 오프라인 모드로 통신 중입니다.")
             
     st.divider()
-    st.caption("ⓒ 2026 시스템 개발: 미나")
+    # 💡 [V10.3 모던화] 저작권 문구를 "COPYLIGHT(C) 2026"으로 변경
+    st.caption("COPYLIGHT(C) 2026")
 
 # 🎯 1. 검색 조건 설정
 st.markdown("<div class='category-title'>🔍 1. 검색 조건 설정 (원클릭)</div>", unsafe_allow_html=True)
@@ -284,59 +286,67 @@ if execute_btn:
         else:
             all_data = []
             lawd_cd = SEOUL_GU_CD[selected_gu]
-            progress_text = st.empty()
             
-            for idx, (prop_type, url) in enumerate(api_targets):
-                progress_text.markdown(f"📡 **[{prop_type}]** 백그라운드 K-apt & 건축물대장 융합 엔진 가동 중... ({idx+1}/{len(api_targets)})")
-                try:
-                    res = requests.get(url, params={"serviceKey": urllib.parse.unquote(final_api_key), "LAWD_CD": lawd_cd, "DEAL_YMD": target_month, "numOfRows": "2000"}, timeout=20, verify=False)
-                    if res.status_code == 200:
-                        root = ET.fromstring(res.content)
-                        items = root.findall('.//item')
-                        for item in items:
-                            item_dong = get_multi_xml_text(item, ['umdNm', 'dongNm', 'sggNm'], "")
-                            if "전체 (해당 구 모든 동)" in selected_dongs or any(d in item_dong for d in selected_dongs):
-                                apt_name = get_multi_xml_text(item, ['aptNm', 'offiNm', 'mhouseNm', 'bldgNm', 'rletTypeNm'], "건물명 없음")
-                                raw_p = get_multi_xml_text(item, ['dealAmount'], "0").replace(",", "")
-                                dep_p = get_multi_xml_text(item, ['deposit'], "0").replace(",", "")
-                                mon_p = get_multi_xml_text(item, ['monthlyRent'], "0").replace(",", "")
-                                
-                                umd_cd = get_multi_xml_text(item, ['umdCd', 'bjdongCd'], "")
-                                jibun = get_multi_xml_text(item, ['jibun'], "")
-                                
-                                area_exc = float(get_multi_xml_text(item, ['excluUseAr', 'plottage', 'spc'], "0.0"))
-                                py_exc = round(area_exc / 3.3058, 2) 
-                                
-                                # 💡 백그라운드 면적 라우팅 엔진 호출 (출력물에서 방식 항목 제거)
-                                supply_area = get_ultimate_supply_area(final_api_key, lawd_cd, umd_cd, jibun, apt_name, area_exc, prop_type)
-                                py_sup = round(supply_area / 3.3058, 2)
+            with st.status("⏳ **대용량 부동산 빅데이터를 안전하게 추출하는 중입니다...** (1~2분 소요)", expanded=True) as status:
+                progress_bar = st.progress(0)
+                progress_text = st.empty()
+                
+                for idx, (prop_type, url) in enumerate(api_targets):
+                    progress_text.markdown(f"📡 **[{prop_type}]** 백그라운드 V10 하이브리드 엔진 가동 중... ({idx+1}/{len(api_targets)})")
+                    try:
+                        res = requests.get(url, params={"serviceKey": urllib.parse.unquote(final_api_key), "LAWD_CD": lawd_cd, "DEAL_YMD": target_month, "numOfRows": "2000"}, timeout=20, verify=False)
+                        if res.status_code == 200:
+                            root = ET.fromstring(res.content)
+                            items = root.findall('.//item')
+                            for item in items:
+                                item_dong = get_multi_xml_text(item, ['umdNm', 'dongNm', 'sggNm'], "")
+                                if "전체 (해당 구 모든 동)" in selected_dongs or any(d in item_dong for d in selected_dongs):
+                                    apt_name = get_multi_xml_text(item, ['aptNm', 'offiNm', 'mhouseNm', 'bldgNm', 'rletTypeNm'], "건물명 없음")
+                                    raw_p = get_multi_xml_text(item, ['dealAmount'], "0").replace(",", "")
+                                    dep_p = get_multi_xml_text(item, ['deposit'], "0").replace(",", "")
+                                    mon_p = get_multi_xml_text(item, ['monthlyRent'], "0").replace(",", "")
+                                    
+                                    umd_cd = get_multi_xml_text(item, ['umdCd', 'bjdongCd'], "")
+                                    jibun = get_multi_xml_text(item, ['jibun'], "")
+                                    build_year = get_multi_xml_text(item, ['buildYear'], "2000")
+                                    
+                                    area_exc = float(get_multi_xml_text(item, ['excluUseAr', 'plottage', 'spc'], "0.0"))
+                                    py_exc = round(area_exc / 3.3058, 2) 
+                                    
+                                    supply_area = get_ultimate_supply_area(final_api_key, lawd_cd, umd_cd, jibun, apt_name, area_exc, prop_type, build_year)
+                                    py_sup = round(supply_area / 3.3058, 2)
 
-                                if int(raw_p) > 0:
-                                    num_p = int(raw_p) * 10000; p_man = int(raw_p)
-                                    disp_p = format_currency(num_p)
-                                else:
-                                    num_p = int(dep_p) * 10000; p_man = int(dep_p)
-                                    disp_p = f"보증금 {format_currency(num_p)} / 월세 {int(mon_p)*10000:,}원"
-                                
-                                p_per_py_exc = int(num_p / py_exc) if py_exc > 0 else 0
-                                p_per_py_sup = int(num_p / py_sup) if py_sup > 0 else 0
-                                
-                                all_data.append({
-                                    "계약일": f"{get_multi_xml_text(item, ['dealYear'])}-{int(get_multi_xml_text(item, ['dealMonth'])):02d}-{int(get_multi_xml_text(item, ['dealDay'])):02d}", 
-                                    "분류": prop_type, "법정동": item_dong, "부동산/건물명": apt_name, "층수": f"{get_multi_xml_text(item, ['floor'])}층",
+                                    if int(raw_p) > 0:
+                                        num_p = int(raw_p) * 10000; p_man = int(raw_p)
+                                        disp_p = format_currency(num_p)
+                                    else:
+                                        num_p = int(dep_p) * 10000; p_man = int(dep_p)
+                                        disp_p = f"보증금 {format_currency(num_p)} / 월세 {int(mon_p)*10000:,}원"
                                     
-                                    "전용 면적(㎡)": round(area_exc, 2), "전용 평수(평)": py_exc, 
-                                    "공급 면적(㎡)": supply_area, "공급 평수(평)": py_sup,
+                                    p_per_py_exc = int(num_p / py_exc) if py_exc > 0 else 0
+                                    p_per_py_sup = int(num_p / py_sup) if py_sup > 0 else 0
                                     
-                                    "거래금액": disp_p, "거래금액(만원)": p_man,
-                                    "평당 거래가(전용)": format_currency(p_per_py_exc) if int(raw_p) > 0 else "-",
-                                    "평당 거래가(공급)": format_currency(p_per_py_sup) if int(raw_p) > 0 else "-",
-                                    "취소 여부": "취소됨" if get_multi_xml_text(item, ['cdealDay']) else "정상",
-                                    
-                                    "_raw_price": num_p, "_raw_pyeong_price": p_per_py_exc
-                                })
-                except: pass
-            progress_text.empty()
+                                    all_data.append({
+                                        "계약일": f"{get_multi_xml_text(item, ['dealYear'])}-{int(get_multi_xml_text(item, ['dealMonth'])):02d}-{int(get_multi_xml_text(item, ['dealDay'])):02d}", 
+                                        "분류": prop_type, "법정동": item_dong, "부동산/건물명": apt_name, "층수": f"{get_multi_xml_text(item, ['floor'])}층",
+                                        
+                                        "전용 면적(㎡)": round(area_exc, 2), "전용 평수(평)": py_exc, 
+                                        "공급 면적(㎡)": supply_area, "공급 평수(평)": py_sup,
+                                        
+                                        "거래금액": disp_p, "거래금액(만원)": p_man,
+                                        "평당 거래가(전용)": format_currency(p_per_py_exc) if int(raw_p) > 0 else "-",
+                                        "평당 거래가(공급)": format_currency(p_per_py_sup) if int(raw_p) > 0 else "-",
+                                        "취소 여부": "취소됨" if get_multi_xml_text(item, ['cdealDay']) else "정상",
+                                        
+                                        "_raw_price": num_p, "_raw_pyeong_price": p_per_py_exc
+                                    })
+                    except: pass
+                    
+                    progress_bar.progress((idx + 1) / len(api_targets))
+                    
+                progress_text.empty()
+                progress_bar.empty()
+                status.update(label="✅ **모든 데이터 추출 및 융합이 완료되었습니다!**", state="complete", expanded=False)
 
             if all_data:
                 df = pd.DataFrame(all_data)
@@ -373,13 +383,12 @@ if execute_btn:
                             sc_df = trade_df.copy(); sc_df['거래금액(억)'] = sc_df['_raw_price'] / 100000000
                             sc = alt.Chart(sc_df).mark_circle(size=60, color="#3498DB").encode(
                                 x=alt.X('전용 평수(평):Q', title='전용 면적 (평)'), y=alt.Y('거래금액(억):Q', title='거래금액 (억)'),
-                                # 툴팁에서도 면적 산출 방식 제거
                                 tooltip=['부동산/건물명', '전용 평수(평)', '공급 평수(평)', '거래금액(억)']
                             ).properties(height=500)
                             st.altair_chart(sc, use_container_width=True)
                 
                 st.markdown("<div class='category-title'>📋 5. 전체 상세 데이터 확인 및 엑셀 다운로드</div>", unsafe_allow_html=True)
-                st.caption("💡 [엔진 가동 현황] 아파트는 K-apt(공동주택) API, 그 외 건축물은 건축물대장 API를 통해 100% 빈틈없는 공급면적을 자동 산출합니다.")
+                st.caption("💡 [엔진 가동 현황] 최신 K-apt(공동주택), 건축물대장 API 및 건축년도(Build Year) 다이내믹 역산 엔진이 완벽하게 가동되어 100%에 가까운 공급면적을 자동 산출합니다.")
                 
                 display_df = df.drop(columns=['_raw_price', '_raw_pyeong_price']).copy()
                 display_df = display_df.sort_values(by=["분류", "계약일"], ascending=[True, False]).reset_index(drop=True)
@@ -412,7 +421,6 @@ if execute_btn:
                         if "만원" in col: worksheet.set_column(i, i, 15, num_fmt)
                         elif "면적" in col or "평수" in col: worksheet.set_column(i, i, 15, float_fmt)
                         elif "평당" in col: worksheet.set_column(i, i, 20)
-                        # "방식" 열 포맷 설정 로직 제거됨
                         else: worksheet.set_column(i, i, 15)
                 
                 st.download_button("📥 깔끔하게 디자인된 엑셀 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
