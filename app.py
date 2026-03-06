@@ -9,56 +9,32 @@ import urllib.parse
 import os
 import altair as alt
 
-# 💡 회사 PC SSL 인증서 차단 경고음 무시
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 🎨 웹앱 기본 설정
-st.set_page_config(page_title="프로 부동산 실거래 분석기", layout="wide", page_icon="🏢")
+# 🎨 웹앱 기본 설정 (오재미에 쏙 들어가도록 깔끔하게!)
+st.set_page_config(page_title="프로 부동산 실거래 분석기", layout="wide")
 
 # ==========================================
-# 🔑 [보안 핵심] 하이브리드 스텔스 API 키 엔진
+# 🔑 [보안 핵심] 화면에서 키 입력창을 없애고 서버 비밀 금고(Secrets)에서 꺼내옵니다!
 # ==========================================
-KEY_FILE = "api_key.txt"
+try:
+    # 💡 스트림릿 클라우드의 'Secrets' 설정에 KOREA_API_KEY 를 넣어두시면 됩니다!
+    final_api_key = st.secrets["KOREA_API_KEY"]
+except:
+    st.error("🚨 서버 비밀 금고에 API 키가 설정되지 않았습니다! 관리자에게 문의하세요.")
+    st.stop()
 
-def get_api_key():
-    try:
-        if "KOREA_API_KEY" in st.secrets:
-            return st.secrets["KOREA_API_KEY"], True 
-    except:
-        pass
-    if os.path.exists(KEY_FILE):
-        with open(KEY_FILE, "r", encoding="utf-8") as f:
-            return f.read().strip(), False
-    return "", False
-
-def save_key_local(key):
-    with open(KEY_FILE, "w", encoding="utf-8") as f:
-        f.write(key.strip())
-
-# 🚨 스마트 만료 알림 시스템
-expiry_date = datetime(2028, 3, 1)
-today = datetime.now()
-days_left = (expiry_date - today).days
-
-if days_left <= 30:
-    st.error(f"🚨 [경고] 국토교통부 API 자료 열람기간 만료가 다가오고 있습니다! (D-{days_left}일)")
-elif days_left <= 100:
-    st.warning(f"💡 [안내] 국토교통부 API 인증키 만료까지 {days_left}일 남았습니다.")
-
-# 💅 CSS 커스텀 인젝션
+# 💅 CSS 커스텀 인젝션 (오재미 테마에 맞춤)
 st.markdown("""
 <style>
-    div.stButton > button:first-child { background-color: #00C781; color: white; border: none; border-radius: 8px; font-weight: bold; height: 50px; }
-    div.stButton > button:first-child:hover { background-color: #00A66A; color: white; }
-    .header-box { background-color: #ffffff; padding: 25px; border-radius: 15px; border: 1px solid #e0e0e0; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #2C3E50;}
-    .header-box h2 { margin: 0 0 5px 0; color: #222; font-size: 26px; font-weight: 800; }
-    .header-box p { margin: 0; color: #666; font-size: 15px; }
-    .category-title { font-size: 16px; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 15px; border-bottom: 2px solid #00C781; padding-bottom: 5px; display: inline-block; }
-    [data-testid="stMetricValue"] { font-size: 28px !important; color: #00C781 !important; font-weight: 900 !important; }
+    div.stButton > button:first-child { background-color: #3b4890; color: white; border: none; border-radius: 4px; font-weight: bold; height: 50px; }
+    div.stButton > button:first-child:hover { background-color: #2a3042; color: white; }
+    .category-title { font-size: 16px; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 15px; border-bottom: 2px solid #3b4890; padding-bottom: 5px; display: inline-block; }
+    [data-testid="stMetricValue"] { font-size: 28px !important; color: #e74c3c !important; font-weight: 900 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# 🧠 데이터베이스
+# 🧠 데이터베이스 (대표님의 기존 완벽한 DB 유지)
 SEOUL_GU_CD = {
     "종로구": "11110", "중구": "11140", "용산구": "11170", "성동구": "11200", "광진구": "11215",
     "동대문구": "11230", "중랑구": "11260", "성북구": "11290", "강북구": "11305", "도봉구": "11320",
@@ -77,11 +53,9 @@ SEOUL_DONG_DB = {
     "서대문구": ["충정로2가", "합동", "미근동", "냉천동", "천연동", "옥천동", "영천동", "현저동", "북아현동", "홍제동", "대현동", "대신동", "신촌동", "봉원동", "창천동", "연희동", "홍은동", "북가좌동", "남가좌동"]
 }
 
-# 💡 [V11 핵심 무기] VIP 초구축 아파트 스나이퍼 매핑 사전 (네이버/R114 데이터 수제작 하드코딩)
-# 형식: "법정동_아파트명": {전용면적: 네이버공급면적}
 VIP_APARTMENT_DB = {
-    "대치동_은마": {76.79: 101.52, 84.43: 115.0},  # 31평형, 34평형 정밀 타격
-    "여의도동_시범": {60.96: 62.79, 79.24: 79.24, 118.12: 118.12, 156.99: 156.99}, # 전용=공급
+    "대치동_은마": {76.79: 101.52, 84.43: 115.0}, 
+    "여의도동_시범": {60.96: 62.79, 79.24: 79.24, 118.12: 118.12, 156.99: 156.99},
     "여의도동_대교": {95.50: 100.19, 133.40: 142.14},
     "여의도동_진주": {48.26: 49.71, 63.83: 65.74, 72.82: 76.03},
     "압구정동_신현대9차": {111.38: 115.7, 152.22: 165.28, 183.41: 198.34},
@@ -119,17 +93,11 @@ def get_multi_xml_text(node, tags, default=""):
             return elem.text.strip()
     return default
 
-# ==========================================================
-# 🏗️ [V11 얼티밋 코어] VIP 스나이퍼 매핑 + K-apt + 건축물대장 + 다이내믹 방어막
-# ==========================================================
 @st.cache_data(show_spinner=False, ttl=86400)
 def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_area, prop_type, build_year, dong_name):
-    # 🌟 엔진 0: VIP 스나이퍼 매핑 (네이버 완벽 일치 하드코딩 타격)
     if "아파트" in prop_type:
         search_key = f"{dong_name}_{apt_name.replace('아파트', '').strip()}"
         if search_key in VIP_APARTMENT_DB:
-            # 전용면적이 VIP 사전에 있으면 무조건 그 공급면적을 반환! (오차 0%)
-            # 소수점 오차 방지를 위해 차이가 1.0 이내면 같은 평형으로 간주
             for db_exclu, db_supply in VIP_APARTMENT_DB[search_key].items():
                 if abs(db_exclu - exclu_area) < 1.0:
                     return db_supply
@@ -155,7 +123,6 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
     bjd_code = f"{lawd_cd}{umd_cd.zfill(5)}"
     safe_api_key = urllib.parse.unquote(api_key)
     
-    # 🌟 엔진 1: K-apt (공동주택 기본정보) API
     if "아파트" in prop_type:
         try:
             kapt_url = "http://apis.data.go.kr/1613000/AptBasisInfoService1/getAptList"
@@ -171,7 +138,6 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
                         return round(exclu_area * 1.33, 2)
         except: pass
 
-    # 🌟 엔진 2: 건축물대장 API
     try:
         jibun_parts = str(jibun).replace(" ", "").split('-')
         bun = jibun_parts[0].zfill(4)
@@ -199,43 +165,7 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
                 return round(exclu_area + common_area, 2)
     except: pass
 
-    # 🌟 엔진 3: 다이내믹 건축년도 방어
     return fallback_area
-
-# 🌟 메인 화면 대시보드
-st.markdown("""
-<div class="header-box">
-    <h2>🏢 실시간 부동산 실거래 분석기 <span style="font-size:14px; background:#111111; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v11.3 구축 건물 건축대장 오기 자동 수정 적용</span></h2>
-    <p>상실의시대 가족 전용 | 구축 아파트 데이터 오류 개선 및 건축년도(Build Year) 다이내믹 역산 엔진 적용</p>
-</div>
-""", unsafe_allow_html=True)
-
-with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/skyscrapers.png", width=60)
-    saved_key, is_from_cloud = get_api_key()
-    
-    if is_from_cloud:
-        st.title("🟢 시스템 상태")
-        st.success("**서버 온라인**\n\n부동산 빅데이터 관제 시스템이 정상 가동 중입니다.")
-        final_api_key = saved_key
-    else:
-        st.title("⚙️ API Key 설정")
-        if saved_key:
-            st.success("🔒 **삼중 보안 모드 작동 중**")
-            api_key_input = st.text_input("마스터 API 키 변경 (선택)", value="", type="password", key="api_change_sidebar")
-        else:
-            st.warning("⚠️ 인증키가 없습니다.")
-            api_key_input = st.text_input("국토교통부 마스터 API 키 입력", value="", type="password", key="api_first_sidebar")
-            
-        if api_key_input:
-            save_key_local(api_key_input)
-            st.success("✅ 인증키가 저장되었습니다!")
-            saved_key = api_key_input
-        final_api_key = saved_key
-        if final_api_key: st.info("💡 로컬 오프라인 모드로 통신 중입니다.")
-            
-    st.divider()
-    st.caption("COPYLIGHT(C) 2026")
 
 # 🎯 1. 검색 조건 설정
 st.markdown("<div class='category-title'>🔍 1. 검색 조건 설정 (원클릭)</div>", unsafe_allow_html=True)
@@ -274,7 +204,6 @@ with col_c:
 st.divider()
 execute_btn = st.button("🚀 위 조건으로 빅데이터 병렬 추출 및 시각화 대시보드 생성", use_container_width=True)
 
-# API URL 주소 분리
 URL_APT_T = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev"
 URL_OFF_T = "https://apis.data.go.kr/1613000/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade"
 URL_VIL_T = "https://apis.data.go.kr/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade"
@@ -288,8 +217,7 @@ URL_BIZ   = "https://apis.data.go.kr/1613000/RTMSDataSvcBizTrade/getRTMSDataSvcB
 URL_LND   = "https://apis.data.go.kr/1613000/RTMSDataSvcLandTrade/getRTMSDataSvcLandTrade"
 
 if execute_btn:
-    if not final_api_key: st.error("🚨 마스터 키가 연결되지 않았습니다.")
-    elif not selected_dongs: st.warning("⚠️ 분석할 동을 선택해주세요!")
+    if not selected_dongs: st.warning("⚠️ 분석할 동을 선택해주세요!")
     else:
         api_targets = []
         if opt_apt_trade: api_targets.append(("아파트 매매", URL_APT_T))
@@ -335,7 +263,6 @@ if execute_btn:
                                     area_exc = float(get_multi_xml_text(item, ['excluUseAr', 'plottage', 'spc'], "0.0"))
                                     py_exc = round(area_exc / 3.3058, 2) 
                                     
-                                    # 💡 [V11 코어] 동 이름(item_dong)을 매개변수로 추가 전달!
                                     supply_area = get_ultimate_supply_area(final_api_key, lawd_cd, umd_cd, jibun, apt_name, area_exc, prop_type, build_year, item_dong)
                                     py_sup = round(supply_area / 3.3058, 2)
 
@@ -411,7 +338,6 @@ if execute_btn:
                             st.altair_chart(sc, use_container_width=True)
                 
                 st.markdown("<div class='category-title'>📋 5. 전체 상세 데이터 확인 및 엑셀 다운로드</div>", unsafe_allow_html=True)
-                st.caption("💡 [엔진 가동 현황] 1970~80년대 VIP 초구축 아파트들은 네이버 매핑 테이블로 즉시 타격하며, 그 외 단지는 K-apt 및 건축물대장 API, 다이내믹 역산 엔진이 자동 산출합니다.")
                 
                 display_df = df.drop(columns=['_raw_price', '_raw_pyeong_price']).copy()
                 display_df = display_df.sort_values(by=["분류", "계약일"], ascending=[True, False]).reset_index(drop=True)
