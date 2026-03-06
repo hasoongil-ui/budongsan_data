@@ -8,7 +8,7 @@ import urllib3
 import urllib.parse
 import os
 import altair as alt
-import time  # 💡 미나의 추가: 시간 측정을 위한 라이브러리 탑재!
+import time
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -20,8 +20,22 @@ except:
     st.error("🚨 서버 비밀 금고에 API 키가 설정되지 않았습니다! 관리자에게 문의하세요.")
     st.stop()
 
+# ==========================================
+# 🛡️ [보안 핵심] 미나의 철통 방어막: 풀스크린, 워터마크, 기본 메뉴 싹 다 숨기기!
+# ==========================================
 st.markdown("""
 <style>
+    /* 스트림릿 기본 제공 UI(꼬리표) 완전 암살 */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* 우측 상단/하단에 뜨는 툴바, 풀스크린 버튼, 호스팅 배너 원천 차단 */
+    [data-testid="stToolbar"] {visibility: hidden !important;}
+    [data-testid="stDecoration"] {visibility: hidden !important;}
+    [data-testid="stStatusWidget"] {visibility: hidden !important;}
+    
+    /* 오재미 전용 깔끔한 디자인 유지 */
     div.stButton > button:first-child { background-color: #3b4890; color: white; border: none; border-radius: 4px; font-weight: bold; height: 50px; }
     div.stButton > button:first-child:hover { background-color: #2a3042; color: white; }
     .header-box { background-color: #ffffff; padding: 25px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 6px solid #3b4890;}
@@ -220,14 +234,12 @@ URL_BIZ   = "https://apis.data.go.kr/1613000/RTMSDataSvcBizTrade/getRTMSDataSvcB
 URL_LND   = "https://apis.data.go.kr/1613000/RTMSDataSvcLandTrade/getRTMSDataSvcLandTrade"
 
 if execute_btn:
-    # 💡 미나의 철통 방어막: 연속 클릭(10초) 방지 시스템 가동!
     if "last_query_time" in st.session_state:
         elapsed = time.time() - st.session_state.last_query_time
         if elapsed < 10:
             st.error(f"🚨 무리한 서버 접근을 막기 위해 10초 후 다시 조회할 수 있습니다. (남은 대기 시간: {int(10 - elapsed)}초)")
             st.stop()
             
-    # 조회 승인 시 현재 시간을 기록합니다.
     st.session_state.last_query_time = time.time()
 
     if not selected_dongs: st.warning("⚠️ 분석할 동을 선택해주세요!")
