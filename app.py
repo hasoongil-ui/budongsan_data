@@ -8,22 +8,18 @@ import urllib3
 import urllib.parse
 import os
 import altair as alt
+import time  # 💡 미나의 추가: 시간 측정을 위한 라이브러리 탑재!
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 🎨 웹앱 기본 설정 (수식어 제거)
 st.set_page_config(page_title="부동산 실거래 분석기", layout="wide")
 
-# ==========================================
-# 🔑 [보안 핵심] API 키는 관리자가 Streamlit Secrets에서 직접 관리합니다.
-# ==========================================
 try:
     final_api_key = st.secrets["KOREA_API_KEY"]
 except:
     st.error("🚨 서버 비밀 금고에 API 키가 설정되지 않았습니다! 관리자에게 문의하세요.")
     st.stop()
 
-# 💅 CSS 커스텀 인젝션
 st.markdown("""
 <style>
     div.stButton > button:first-child { background-color: #3b4890; color: white; border: none; border-radius: 4px; font-weight: bold; height: 50px; }
@@ -36,7 +32,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🧠 데이터베이스 
 SEOUL_GU_CD = {
     "종로구": "11110", "중구": "11140", "용산구": "11170", "성동구": "11200", "광진구": "11215",
     "동대문구": "11230", "중랑구": "11260", "성북구": "11290", "강북구": "11305", "도봉구": "11320",
@@ -169,9 +164,6 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
 
     return fallback_area
 
-# ==========================================
-# 🌟 깔끔한 헤더 (군더더기, 사이드바 완전 제거)
-# ==========================================
 st.markdown("""
 <div class="header-box">
     <h2>🏠 부동산 실거래 분석기 <span style="font-size:14px; background:#e74c3c; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v11.3 전용 엔진</span></h2>
@@ -179,7 +171,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 🎯 1. 검색 조건 설정
 st.markdown("<div class='category-title'>🔍 1. 검색 조건 설정 (원클릭)</div>", unsafe_allow_html=True)
 col1, col2, col3 = st.columns([1, 2, 1])
 
@@ -192,7 +183,6 @@ with col3:
     selected_month_label = st.selectbox("📅 조회 연월 (최신순)", month_labels, key="month_main")
     target_month = month_values[selected_month_label]
 
-# 🗂️ 2. 수집할 데이터 선택
 st.markdown("<div class='category-title'>🗂️ 2. 수집할 데이터 선택</div>", unsafe_allow_html=True)
 col_a, col_b, col_c = st.columns(3)
 with col_a:
@@ -215,7 +205,6 @@ with col_c:
 
 st.divider()
 
-# 🚀 이모티콘 제거 및 깔끔한 텍스트로 변경
 execute_btn = st.button("위 조건으로 빅데이터 병렬 추출 및 시각화 대시보드 생성", use_container_width=True)
 
 URL_APT_T = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev"
@@ -231,6 +220,16 @@ URL_BIZ   = "https://apis.data.go.kr/1613000/RTMSDataSvcBizTrade/getRTMSDataSvcB
 URL_LND   = "https://apis.data.go.kr/1613000/RTMSDataSvcLandTrade/getRTMSDataSvcLandTrade"
 
 if execute_btn:
+    # 💡 미나의 철통 방어막: 연속 클릭(10초) 방지 시스템 가동!
+    if "last_query_time" in st.session_state:
+        elapsed = time.time() - st.session_state.last_query_time
+        if elapsed < 10:
+            st.error(f"🚨 무리한 서버 접근을 막기 위해 10초 후 다시 조회할 수 있습니다. (남은 대기 시간: {int(10 - elapsed)}초)")
+            st.stop()
+            
+    # 조회 승인 시 현재 시간을 기록합니다.
+    st.session_state.last_query_time = time.time()
+
     if not selected_dongs: st.warning("⚠️ 분석할 동을 선택해주세요!")
     else:
         api_targets = []
