@@ -399,3 +399,6 @@ if execute_btn:
                 
                 st.download_button("📥 엑셀 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
             else: st.warning("데이터가 존재하지 않습니다.")
+
+# 💡 미나의 여백 마법: 하단 워터마크 절단기 때문에 버튼이 잘리지 않도록 투명 쿠션을 깔아줍니다!
+st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
