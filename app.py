@@ -18,7 +18,6 @@ st.set_page_config(page_title="프로 부동산 실거래 분석기", layout="wi
 # 🔑 [보안 핵심] 화면에서 키 입력창을 없애고 서버 비밀 금고(Secrets)에서 꺼내옵니다!
 # ==========================================
 try:
-    # 💡 스트림릿 클라우드의 'Secrets' 설정에 KOREA_API_KEY 를 넣어두시면 됩니다!
     final_api_key = st.secrets["KOREA_API_KEY"]
 except:
     st.error("🚨 서버 비밀 금고에 API 키가 설정되지 않았습니다! 관리자에게 문의하세요.")
@@ -29,12 +28,15 @@ st.markdown("""
 <style>
     div.stButton > button:first-child { background-color: #3b4890; color: white; border: none; border-radius: 4px; font-weight: bold; height: 50px; }
     div.stButton > button:first-child:hover { background-color: #2a3042; color: white; }
+    .header-box { background-color: #ffffff; padding: 25px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 6px solid #3b4890;}
+    .header-box h2 { margin: 0 0 5px 0; color: #222; font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
+    .header-box p { margin: 0; color: #666; font-size: 15px; font-weight: 500; }
     .category-title { font-size: 16px; font-weight: bold; color: #333; margin-top: 20px; margin-bottom: 15px; border-bottom: 2px solid #3b4890; padding-bottom: 5px; display: inline-block; }
     [data-testid="stMetricValue"] { font-size: 28px !important; color: #e74c3c !important; font-weight: 900 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# 🧠 데이터베이스 (대표님의 기존 완벽한 DB 유지)
+# 🧠 데이터베이스 
 SEOUL_GU_CD = {
     "종로구": "11110", "중구": "11140", "용산구": "11170", "성동구": "11200", "광진구": "11215",
     "동대문구": "11230", "중랑구": "11260", "성북구": "11290", "강북구": "11305", "도봉구": "11320",
@@ -166,6 +168,24 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
     except: pass
 
     return fallback_area
+
+# ==========================================
+# 🌟 미나가 실수로 빼먹었던 타이틀 & 사이드바 완벽 복구!
+# ==========================================
+st.markdown("""
+<div class="header-box">
+    <h2>🏠 오재미 부동산 실거래 분석기 <span style="font-size:14px; background:#e74c3c; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v11.3 VIP 전용 엔진</span></h2>
+    <p>오재미 이웃님들 환영합니다! | 구축 아파트 평수 오기 자동 수정 및 K-apt 역산 엔진 탑재</p>
+</div>
+""", unsafe_allow_html=True)
+
+with st.sidebar:
+    st.image("https://img.icons8.com/fluency/96/skyscrapers.png", width=70)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.title("🟢 시스템 상태")
+    st.success("**서버 온라인**\n\n오재미 비밀 금고에서 마스터 키를 성공적으로 연결했습니다. 안심하고 조회하세요!")
+    st.divider()
+    st.caption("COPYRIGHT(C) OJEMI")
 
 # 🎯 1. 검색 조건 설정
 st.markdown("<div class='category-title'>🔍 1. 검색 조건 설정 (원클릭)</div>", unsafe_allow_html=True)
@@ -331,7 +351,7 @@ if execute_btn:
                         with ch_col2:
                             st.markdown("**📐 2) 전용 면적(평) vs 거래금액 상관관계**")
                             sc_df = trade_df.copy(); sc_df['거래금액(억)'] = sc_df['_raw_price'] / 100000000
-                            sc = alt.Chart(sc_df).mark_circle(size=60, color="#3498DB").encode(
+                            sc = alt.Chart(sc_df).mark_circle(size=60, color="#3b4890").encode(
                                 x=alt.X('전용 평수(평):Q', title='전용 면적 (평)'), y=alt.Y('거래금액(억):Q', title='거래금액 (억)'),
                                 tooltip=['부동산/건물명', '전용 평수(평)', '공급 평수(평)', '거래금액(억)']
                             ).properties(height=500)
@@ -354,7 +374,7 @@ if execute_btn:
                     workbook, worksheet = writer.book, writer.sheets['종합 실거래가']
                     
                     header_format = workbook.add_format({
-                        'bg_color': '#2980B9', 
+                        'bg_color': '#3b4890', 
                         'font_color': '#FFFFFF', 
                         'bold': True, 
                         'border': 1, 
