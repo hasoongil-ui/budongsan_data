@@ -11,11 +11,11 @@ import altair as alt
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 🎨 웹앱 기본 설정 (오재미에 쏙 들어가도록 깔끔하게!)
-st.set_page_config(page_title="프로 부동산 실거래 분석기", layout="wide")
+# 🎨 웹앱 기본 설정 (수식어 제거)
+st.set_page_config(page_title="부동산 실거래 분석기", layout="wide")
 
 # ==========================================
-# 🔑 [보안 핵심] 화면에서 키 입력창을 없애고 서버 비밀 금고(Secrets)에서 꺼내옵니다!
+# 🔑 [보안 핵심] API 키는 관리자가 Streamlit Secrets에서 직접 관리합니다.
 # ==========================================
 try:
     final_api_key = st.secrets["KOREA_API_KEY"]
@@ -23,7 +23,7 @@ except:
     st.error("🚨 서버 비밀 금고에 API 키가 설정되지 않았습니다! 관리자에게 문의하세요.")
     st.stop()
 
-# 💅 CSS 커스텀 인젝션 (오재미 테마에 맞춤)
+# 💅 CSS 커스텀 인젝션
 st.markdown("""
 <style>
     div.stButton > button:first-child { background-color: #3b4890; color: white; border: none; border-radius: 4px; font-weight: bold; height: 50px; }
@@ -170,22 +170,14 @@ def get_ultimate_supply_area(api_key, lawd_cd, umd_cd, jibun, apt_name, exclu_ar
     return fallback_area
 
 # ==========================================
-# 🌟 미나가 실수로 빼먹었던 타이틀 & 사이드바 완벽 복구!
+# 🌟 깔끔한 헤더 (군더더기, 사이드바 완전 제거)
 # ==========================================
 st.markdown("""
 <div class="header-box">
-    <h2>🏠 오재미 부동산 실거래 분석기 <span style="font-size:14px; background:#e74c3c; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v11.3 VIP 전용 엔진</span></h2>
-    <p>오재미 이웃님들 환영합니다! | 구축 아파트 평수 오기 자동 수정 및 K-apt 역산 엔진 탑재</p>
+    <h2>🏠 부동산 실거래 분석기 <span style="font-size:14px; background:#e74c3c; color:white; padding:4px 10px; border-radius:20px; vertical-align: middle; margin-left:10px;">v11.3 전용 엔진</span></h2>
+    <p>구축 아파트 평수 오기 자동 수정 및 K-apt 역산 엔진 탑재</p>
 </div>
 """, unsafe_allow_html=True)
-
-with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/skyscrapers.png", width=70)
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.title("🟢 시스템 상태")
-    st.success("**서버 온라인**\n\n오재미 비밀 금고에서 마스터 키를 성공적으로 연결했습니다. 안심하고 조회하세요!")
-    st.divider()
-    st.caption("COPYRIGHT(C) OJEMI")
 
 # 🎯 1. 검색 조건 설정
 st.markdown("<div class='category-title'>🔍 1. 검색 조건 설정 (원클릭)</div>", unsafe_allow_html=True)
@@ -222,7 +214,9 @@ with col_c:
     opt_land_trade = st.checkbox("🌍 토지 매매 실거래가", key="opt11")
 
 st.divider()
-execute_btn = st.button("🚀 위 조건으로 빅데이터 병렬 추출 및 시각화 대시보드 생성", use_container_width=True)
+
+# 🚀 이모티콘 제거 및 깔끔한 텍스트로 변경
+execute_btn = st.button("위 조건으로 빅데이터 병렬 추출 및 시각화 대시보드 생성", use_container_width=True)
 
 URL_APT_T = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev"
 URL_OFF_T = "https://apis.data.go.kr/1613000/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade"
@@ -257,12 +251,12 @@ if execute_btn:
             all_data = []
             lawd_cd = SEOUL_GU_CD[selected_gu]
             
-            with st.status("⏳ **대용량 부동산 빅데이터를 안전하게 추출하는 중입니다...** (1~2분 소요)", expanded=True) as status:
+            with st.status("⏳ **대용량 부동산 빅데이터를 추출하는 중입니다...** (1~2분 소요)", expanded=True) as status:
                 progress_bar = st.progress(0)
                 progress_text = st.empty()
                 
                 for idx, (prop_type, url) in enumerate(api_targets):
-                    progress_text.markdown(f"📡 **[{prop_type}]** 백그라운드 V11 얼티밋 엔진 가동 중... ({idx+1}/{len(api_targets)})")
+                    progress_text.markdown(f"📡 **[{prop_type}]** 백그라운드 엔진 가동 중... ({idx+1}/{len(api_targets)})")
                     try:
                         res = requests.get(url, params={"serviceKey": urllib.parse.unquote(final_api_key), "LAWD_CD": lawd_cd, "DEAL_YMD": target_month, "numOfRows": "2000"}, timeout=20, verify=False)
                         if res.status_code == 200:
@@ -392,5 +386,5 @@ if execute_btn:
                         elif "평당" in col: worksheet.set_column(i, i, 20)
                         else: worksheet.set_column(i, i, 15)
                 
-                st.download_button("📥 깔끔하게 디자인된 엑셀 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
+                st.download_button("📥 엑셀 다운로드", data=output.getvalue(), file_name=f"{selected_gu}_부동산데이터.xlsx", type="primary")
             else: st.warning("데이터가 존재하지 않습니다.")
